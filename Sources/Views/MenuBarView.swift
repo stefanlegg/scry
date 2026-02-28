@@ -167,12 +167,6 @@ struct MenuBarView: View {
     
     private var footer: some View {
         HStack {
-            if let lastUpdated = processManager.lastUpdated {
-                Text("Updated \(lastUpdated.formatted(.relative(presentation: .numeric)))")
-                    .font(.system(size: 10))
-                    .foregroundStyle(theme.textMuted.opacity(0.7))
-            }
-            
             Spacer()
             
             Button("Quit") {
