@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scry Mockup</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    
+    .menu-bar-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    
+    .menu-bar-icon {
+      background: rgba(30, 30, 40, 0.9);
+      backdrop-filter: blur(20px);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .menu-bar-icon .icon {
+      font-size: 14px;
+    }
+    
+    .dropdown {
+      width: 340px;
+      background: rgba(28, 27, 34, 0.95);
+      backdrop-filter: blur(40px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 
+        0 24px 48px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 1px 0 rgba(255, 255, 255, 0.05) inset;
+      overflow: hidden;
+    }
+    
+    .header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e8e6f0;
+      letter-spacing: -0.3px;
+    }
+    
+    .hotkey {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-family: -apple-system, monospace;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .icon-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .section {
+      padding: 8px 0;
+    }
+    
+    .section-header {
+      padding: 6px 16px 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .section-header .icon {
+      font-size: 10px;
+    }
+    
+    .section-header.pinned .icon {
+      color: #f5a623;
+    }
+    
+    .section-header.running .icon {
+      color: #4ade80;
+    }
+    
+    .process-row {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    
+    .process-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    
+    .process-row:hover::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 8px;
+      background: radial-gradient(ellipse at center, rgba(157, 140, 255, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      position: relative;
+    }
+    
+    .status-dot.running {
+      background: #4ade80;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .status-dot.stopped {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(74, 222, 128, 0.4); }
+      50% { box-shadow: 0 0 12px rgba(74, 222, 128, 0.7); }
+    }
+    
+    .process-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .process-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .process-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8e6f0;
+    }
+    
+    .process-port {
+      font-size: 12px;
+      font-family: 'SF Mono', monospace;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    
+    .badge {
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    
+    .badge.watched {
+      background: rgba(96, 165, 250, 0.15);
+      color: #60a5fa;
+    }
+    
+    .process-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+    }
+    
+    .process-path {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .process-path .icon {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    
+    .git-branch {
+      font-size: 11px;
+      color: #f5a623;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .git-branch .icon {
+      font-size: 10px;
+    }
+    
+    .process-actions {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    
+    .process-row:hover .process-actions {
+      opacity: 1;
+    }
+    
+    .action-btn {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 4px 16px;
+    }
+    
+    .footer {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    
+    .footer-text {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.25);
+    }
+    
+    .footer-quit {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    
+    .footer-quit:hover {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .stopped-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.3);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="menu-bar-container">
+    <div class="menu-bar-icon">
+      <span class="icon">🔮</span>
+    </div>
+    
+    <div class="dropdown">
+      <div class="header">
+        <div class="header-left">
+          <span class="logo">Scry</span>
+          <span class="hotkey">⌥⇧S</span>
+        </div>
+        <div class="header-actions">
+          <div class="icon-btn">↻</div>
+          <div class="icon-btn">⚙</div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-header pinned">
+          <span class="icon">📌</span>
+          <span>Pinned</span>
+        </div>
+        
+        <div class="process-row">
+          <div class="status-dot running"></div>
+          <div class="process-info">
+            <div class="process-title-row">
+              <span class="process-name">heyblathers</span>
+              <span class="process-port">:3000</span>
+              <span class="badge watched">🔔</span>
+            </div>
+            <div class="process-meta-row">
+              <span class="process-path">
+                <span class="icon">📁</span>
+                ~/Code/heyblathers
+              </span>
+              <span class="git-branch">
+                <span class="icon">⎇</span>
+                main
+              </span>
+            </div>
+          </div>
+          <div class="process-actions">
+            <div class="action-btn">🌐</div>
+            <div class="action-btn">⋯</div>
+          </div>
+        </div>
+        
+        <div class="process-row">
+          <div class="status-dot stopped"></div>
+          <div class="process-info">
+            <div class="process-title-row">
+              <span class="process-name">scry</span>
+              <span class="stopped-label">not running</span>
+            </div>
+            <div class="process-meta-row">
+              <span class="process-path">
+                <span class="icon">📁</span>
+                ~/Code/scry
+              </span>
+            </div>
+          </div>
+          <div class="process-actions">
+            <div class="action-btn">📂</div>
+            <div class="action-btn">⋯</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="section">
+        <div class="section-header running">
+          <span class="icon">⚡</span>
+          <span>Running</span>
+        </div>
+        
+        <div class="process-row">
+          <div class="status-dot running"></div>
+          <div class="process-info">
+            <div class="process-title-row">
+              <span class="process-name">clawdbot-gateway</span>
+              <span class="process-port">:8080</span>
+            </div>
+            <div class="process-meta-row">
+              <span class="process-path">
+                <span class="icon">📁</span>
+                ~/Code/clawdbot
+              </span>
+              <span class="git-branch">
+                <span class="icon">⎇</span>
+                feat/scry
+              </span>
+            </div>
+          </div>
+          <div class="process-actions">
+            <div class="action-btn">🌐</div>
+            <div class="action-btn">⋯</div>
+          </div>
+        </div>
+        
+        <div class="process-row">
+          <div class="status-dot running"></div>
+          <div class="process-info">
+            <div class="process-title-row">
+              <span class="process-name">api-server</span>
+              <span class="process-port">:4000</span>
+            </div>
+            <div class="process-meta-row">
+              <span class="process-path">
+                <span class="icon">📁</span>
+                ~/Code/myapp/packages/api
+              </span>
+              <span class="git-branch">
+                <span class="icon">⎇</span>
+                develop
+              </span>
+            </div>
+          </div>
+          <div class="process-actions">
+            <div class="action-btn">🌐</div>
+            <div class="action-btn">⋯</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer">
+        <span class="footer-text">Updated 5s ago</span>
+        <span class="footer-quit">Quit</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
