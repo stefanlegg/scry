@@ -27,18 +27,29 @@ actor ProcessScanner {
             
             let command = String(parts[0])
             guard let pid = Int32(parts[1]) else { continue }
-            let name = String(parts[parts.count - 1])  // Last column is NAME (e.g., *:3000)
             
-            // Extract port from NAME (format: *:PORT or 127.0.0.1:PORT)
-            if let colonIndex = name.lastIndex(of: ":"),
-               let port = Int(name[name.index(after: colonIndex)...]) {
-                
-                // Filter to dev-ish ports
-                if devPortRange.contains(port) || additionalDevPorts.contains(port) {
-                    // Only track if it's a dev-ish process or on a dev port
-                    if DevProcessType.isDevProcess(command) || devPortRange.contains(port) {
-                        processes[pid] = (command, port, nil)
-                    }
+            // NAME column can be followed by (LISTEN), so find the address:port part
+            // Format: *:3000 or 127.0.0.1:3000 or [::1]:3000
+            // It's usually second-to-last when (LISTEN) is present, or last otherwise
+            let nameField: String
+            if parts.count >= 10 && String(parts[parts.count - 1]).contains("LISTEN") {
+                nameField = String(parts[parts.count - 2])
+            } else {
+                nameField = String(parts[parts.count - 1])
+            }
+            
+            // Extract port from NAME - handle both IPv4 and IPv6
+            // IPv4: *:3000, 127.0.0.1:3000
+            // IPv6: [::1]:3000, *:3000
+            guard let colonIndex = nameField.lastIndex(of: ":") else { continue }
+            let portString = nameField[nameField.index(after: colonIndex)...]
+            guard let port = Int(portString) else { continue }
+            
+            // Filter to dev-ish ports
+            if devPortRange.contains(port) || additionalDevPorts.contains(port) {
+                // Only track if it's a dev-ish process or on a dev port
+                if DevProcessType.isDevProcess(command) || devPortRange.contains(port) {
+                    processes[pid] = (command, port, nil)
                 }
             }
         }
