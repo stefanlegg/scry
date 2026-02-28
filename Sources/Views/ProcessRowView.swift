@@ -4,9 +4,11 @@ struct ProcessRowView: View {
     let process: DevProcess
     let isPinned: Bool
     let isWatched: Bool
+    let canRestart: Bool
     let onOpen: () -> Void
     let onCopyURL: () -> Void
     let onKill: () -> Void
+    let onRestart: () -> Void
     let onOpenFolder: () -> Void
     let onOpenTerminal: () -> Void
     let onOpenVSCode: () -> Void
@@ -124,6 +126,12 @@ struct ProcessRowView: View {
                 }
                 
                 Divider()
+                
+                if canRestart {
+                    Button(action: onRestart) {
+                        Label("Restart", systemImage: "arrow.clockwise")
+                    }
+                }
                 
                 Button(role: .destructive, action: onKill) {
                     Label("Kill Process", systemImage: "xmark.circle")
@@ -318,6 +326,13 @@ struct PinnedProjectRowCompactView: View {
                 
                 if let process = project.runningProcess {
                     Divider()
+                    
+                    if processManager.canRestart(process) {
+                        Button(action: { processManager.restart(process) }) {
+                            Label("Restart", systemImage: "arrow.clockwise")
+                        }
+                    }
+                    
                     Button(role: .destructive, action: { processManager.kill(process) }) {
                         Label("Kill Process", systemImage: "xmark.circle")
                     }

@@ -202,4 +202,75 @@ class ProcessManager: ObservableObject {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString("http://localhost:\(port)", forType: .string)
     }
+    
+    /// Check if a process can be restarted (has a known command)
+    func canRestart(_ process: DevProcess) -> Bool {
+        guard settings.showRestartOption else { return false }
+        return process.command != nil && process.workingDirectory != nil
+    }
+    
+    /// Restart a process: kill it and re-run the command
+    func restart(_ process: DevProcess) {
+        guard let command = process.command,
+              let workingDir = process.workingDirectory else { return }
+        
+        // Kill the process first
+        kill(process)
+        
+        // Small delay to ensure process is fully terminated
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.launchProcess(command: command, workingDirectory: workingDir)
+        }
+    }
+    
+    /// Launch a process with the given command in the specified directory
+    private func launchProcess(command: String, workingDirectory: String) {
+        switch settings.restartMode {
+        case .terminal:
+            launchInTerminal(command: command, workingDirectory: workingDirectory)
+        case .background:
+            launchInBackground(command: command, workingDirectory: workingDirectory)
+        }
+    }
+    
+    /// Launch command in Terminal.app
+    private func launchInTerminal(command: String, workingDirectory: String) {
+        // Escape single quotes in the command and path
+        let escapedPath = workingDirectory.replacingOccurrences(of: "'", with: "'\\''")
+        let escapedCommand = command.replacingOccurrences(of: "'", with: "'\\''")
+        
+        let script = """
+        tell application "Terminal"
+            activate
+            do script "cd '\(escapedPath)' && \(escapedCommand)"
+        end tell
+        """
+        
+        if let appleScript = NSAppleScript(source: script) {
+            var error: NSDictionary?
+            appleScript.executeAndReturnError(&error)
+            if let error = error {
+                print("Failed to launch in Terminal: \(error)")
+            }
+        }
+    }
+    
+    /// Launch command in the background (no visible terminal)
+    private func launchInBackground(command: String, workingDirectory: String) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        task.arguments = ["-c", command]
+        task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
+        
+        // Redirect output to /dev/null for true background operation
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        
+        do {
+            try task.run()
+            // Don't wait - let it run in background
+        } catch {
+            print("Failed to launch in background: \(error)")
+        }
+    }
 }

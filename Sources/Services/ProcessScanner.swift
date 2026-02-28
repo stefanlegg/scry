@@ -97,6 +97,9 @@ actor ProcessScanner {
                 nil
             }
             
+            // Get the full command line for restart functionality
+            let fullCommand = getCommand(for: pid)
+            
             let process = DevProcess(
                 id: pid,
                 name: info.name,
@@ -104,7 +107,7 @@ actor ProcessScanner {
                 workingDirectory: workingDir,
                 gitRoot: gitRoot,
                 gitBranch: gitBranch,
-                command: info.command
+                command: fullCommand
             )
             devProcesses.append(process)
         }
@@ -153,6 +156,15 @@ actor ProcessScanner {
         }
         let root = output.trimmingCharacters(in: .whitespacesAndNewlines)
         return root.isEmpty ? nil : root
+    }
+    
+    /// Gets the full command line for a process (for restart functionality)
+    private func getCommand(for pid: Int32) -> String? {
+        guard let output = runCommand("/bin/ps", arguments: ["-p", "\(pid)", "-o", "command="]) else {
+            return nil
+        }
+        let command = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return command.isEmpty ? nil : command
     }
     
     /// Runs a shell command and returns stdout

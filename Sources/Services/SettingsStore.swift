@@ -22,6 +22,8 @@ class SettingsStore: ObservableObject {
         static let themeName = "themeName"
         static let hotkeyCode = "hotkeyCode"
         static let hotkeyModifiers = "hotkeyModifiers"
+        static let showRestartOption = "showRestartOption"
+        static let restartMode = "restartMode"
     }
     
     // MARK: - Defaults
@@ -125,6 +127,20 @@ class SettingsStore: ObservableObject {
         }
     }
     
+    // MARK: - Restart
+    
+    @Published var showRestartOption: Bool {
+        didSet {
+            defaults.set(showRestartOption, forKey: Keys.showRestartOption)
+        }
+    }
+    
+    @Published var restartMode: RestartMode {
+        didSet {
+            defaults.set(restartMode.rawValue, forKey: Keys.restartMode)
+        }
+    }
+    
     // MARK: - Init
     
     private init() {
@@ -171,6 +187,15 @@ class SettingsStore: ObservableObject {
         } else {
             self.showStoppedApps = .pinnedOnly
         }
+        
+        // Restart settings
+        self.showRestartOption = defaults.object(forKey: Keys.showRestartOption) as? Bool ?? true
+        if let restartModeString = defaults.string(forKey: Keys.restartMode),
+           let mode = RestartMode(rawValue: restartModeString) {
+            self.restartMode = mode
+        } else {
+            self.restartMode = .terminal
+        }
     }
     
     // MARK: - Launch at Login
@@ -200,6 +225,18 @@ enum ShowStoppedMode: String, CaseIterable {
         case .none: return "Never"
         case .pinnedOnly: return "Pinned only"
         case .all: return "All recently seen"
+        }
+    }
+}
+
+enum RestartMode: String, CaseIterable {
+    case terminal = "terminal"
+    case background = "background"
+    
+    var displayName: String {
+        switch self {
+        case .terminal: return "Open in Terminal"
+        case .background: return "Run in background"
         }
     }
 }

@@ -144,6 +144,23 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                
+                // Restart
+                Section("Restart") {
+                    Toggle("Show restart option", isOn: $settings.showRestartOption)
+                    
+                    if settings.showRestartOption {
+                        Picker("Restart mode", selection: $settings.restartMode) {
+                            ForEach(RestartMode.allCases, id: \.self) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        
+                        Text("Note: Environment variables from your shell session won't be preserved on restart.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .formStyle(.grouped)
             
@@ -162,7 +179,7 @@ struct SettingsView: View {
             }
             .padding()
         }
-        .frame(width: 380, height: 520)
+        .frame(width: 380, height: 580)
     }
 }
 
