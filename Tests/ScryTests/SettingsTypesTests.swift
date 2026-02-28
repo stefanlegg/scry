@@ -16,9 +16,9 @@ final class ShowStoppedModeTests: XCTestCase {
     }
     
     func testInitFromRawValue() {
-        XCTAssertEqual(ShowStoppedMode(rawValue: "none"), .none)
-        XCTAssertEqual(ShowStoppedMode(rawValue: "pinnedOnly"), .pinnedOnly)
-        XCTAssertEqual(ShowStoppedMode(rawValue: "all"), .all)
+        XCTAssertEqual(ShowStoppedMode(rawValue: "none"), ShowStoppedMode.none)
+        XCTAssertEqual(ShowStoppedMode(rawValue: "pinnedOnly"), ShowStoppedMode.pinnedOnly)
+        XCTAssertEqual(ShowStoppedMode(rawValue: "all"), ShowStoppedMode.all)
         XCTAssertNil(ShowStoppedMode(rawValue: "invalid"))
     }
 }
