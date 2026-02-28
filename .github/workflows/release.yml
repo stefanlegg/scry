@@ -1,0 +1,84 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      
+      - name: Build Release
+        run: |
+          swift build -c release
+      
+      - name: Create App Bundle
+        run: |
+          APP_BUNDLE=".build/Scry.app"
+          
+          # Create bundle structure
+          mkdir -p "$APP_BUNDLE/Contents/MacOS"
+          mkdir -p "$APP_BUNDLE/Contents/Resources"
+          
+          # Copy binary
+          cp .build/release/Scry "$APP_BUNDLE/Contents/MacOS/"
+          
+          # Copy Info.plist
+          cp Sources/Info.plist "$APP_BUNDLE/Contents/"
+          
+          # Create PkgInfo
+          echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
+          
+          echo "✅ App bundle created"
+      
+      - name: Create ZIP
+        run: |
+          cd .build
+          zip -r Scry-macOS.zip Scry.app
+          echo "✅ Created Scry-macOS.zip"
+      
+      - name: Get Version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Scry ${{ steps.version.outputs.version }}
+          body: |
+            ## Installation
+            
+            1. Download `Scry-macOS.zip`
+            2. Unzip and drag `Scry.app` to `/Applications`
+            3. On first launch, right-click → Open (macOS Gatekeeper)
+            
+            ## What's New
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          files: |
+            .build/Scry-macOS.zip
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
