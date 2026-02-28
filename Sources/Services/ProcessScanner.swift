@@ -91,11 +91,18 @@ actor ProcessScanner {
                 nil
             }
             
+            let gitRoot: String? = if let dir = workingDir {
+                getGitRoot(for: dir)
+            } else {
+                nil
+            }
+            
             let process = DevProcess(
                 id: pid,
                 name: info.name,
                 port: info.port,
                 workingDirectory: workingDir,
+                gitRoot: gitRoot,
                 gitBranch: gitBranch,
                 command: info.command
             )
@@ -137,6 +144,15 @@ actor ProcessScanner {
         }
         let branch = output.trimmingCharacters(in: .whitespacesAndNewlines)
         return branch.isEmpty ? nil : branch
+    }
+    
+    /// Gets the git repository root for a directory
+    private func getGitRoot(for directory: String) -> String? {
+        guard let output = runCommand("/usr/bin/git", arguments: ["-C", directory, "rev-parse", "--show-toplevel"]) else {
+            return nil
+        }
+        let root = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return root.isEmpty ? nil : root
     }
     
     /// Runs a shell command and returns stdout

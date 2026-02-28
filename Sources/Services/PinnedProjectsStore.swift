@@ -70,7 +70,6 @@ class PinnedProjectsStore: ObservableObject {
 struct PinnedProject: Identifiable {
     let id: String  // The path
     let path: String
-    let displayName: String
     let isWatched: Bool
     var runningProcess: DevProcess?
     
@@ -78,10 +77,18 @@ struct PinnedProject: Identifiable {
         runningProcess != nil
     }
     
+    /// Smart display name: uses running process's monorepo-aware name if available,
+    /// otherwise falls back to the leaf folder name
+    var displayName: String {
+        if let process = runningProcess {
+            return process.displayName
+        }
+        return URL(fileURLWithPath: path).lastPathComponent
+    }
+    
     init(path: String, isWatched: Bool, runningProcess: DevProcess? = nil) {
         self.id = path
         self.path = path
-        self.displayName = URL(fileURLWithPath: path).lastPathComponent
         self.isWatched = isWatched
         self.runningProcess = runningProcess
     }

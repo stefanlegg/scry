@@ -84,7 +84,7 @@ struct ProcessRowView: View {
     
     private var expandedName: String {
         guard let dir = process.workingDirectory else { return process.displayName }
-        return abbreviatePath(dir)
+        return abbreviatePath(dir, gitRoot: process.gitRoot)
     }
     
     private var actionButtons: some View {
@@ -147,12 +147,16 @@ struct ProcessRowView: View {
         }
     }
     
-    private func abbreviatePath(_ path: String) -> String {
+    private func abbreviatePath(_ path: String, gitRoot: String? = nil) -> String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        if path.hasPrefix(home) {
-            return "~" + path.dropFirst(home.count)
+        var displayPath = path
+        
+        // Replace home directory with ~
+        if displayPath.hasPrefix(home) {
+            displayPath = "~" + displayPath.dropFirst(home.count)
         }
-        return path
+        
+        return displayPath
     }
 }
 
@@ -352,6 +356,41 @@ struct ActionButtonStyle: ButtonStyle {
                     .fill(configuration.isPressed ? Color.white.opacity(0.1) : Color.clear)
             )
             .foregroundStyle(Color.white.opacity(0.5))
+    }
+}
+
+// MARK: - Path Truncation Utilities
+
+extension String {
+    /// Truncates a path in the middle, preserving the git root name and leaf folder.
+    /// Example: "~/Code/heyblathers/apps/mobile/ios" → "~/Code/heyblathers/…/ios"
+    func truncatedPath(maxLength: Int, gitRootName: String? = nil) -> String {
+        guard count > maxLength else { return self }
+        
+        let components = self.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        guard components.count > 3 else { return self }
+        
+        // Find the git root component index if provided
+        let rootIndex: Int?
+        if let rootName = gitRootName {
+            rootIndex = components.firstIndex(of: rootName)
+        } else {
+            rootIndex = nil
+        }
+        
+        // Preserve up to and including git root (or first 2 components), plus the last component
+        let preserveStart = rootIndex.map { $0 + 1 } ?? min(2, components.count - 1)
+        let preserveEnd = components.count - 1
+        
+        // If there's nothing to truncate in the middle, return as-is
+        guard preserveStart < preserveEnd else { return self }
+        
+        // Build truncated path
+        let startPart = components[0..<preserveStart].joined(separator: "/")
+        let endPart = components[preserveEnd]
+        let truncated = startPart + "/…/" + endPart
+        
+        return truncated
     }
 }
 
