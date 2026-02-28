@@ -32,9 +32,10 @@ struct SettingsView: View {
                     HStack {
                         Text("Hotkey")
                         Spacer()
-                        Text("⌥⇧S")
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                        HotkeyRecorderView(
+                            keyCode: $settings.hotkeyCode,
+                            modifiers: $settings.hotkeyModifiers
+                        )
                     }
                 }
                 
