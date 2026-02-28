@@ -39,19 +39,19 @@ struct SectionHeader: View {
     @Environment(\.theme) var theme
     
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             Text(icon)
-                .font(.system(size: 10))
+                .font(.system(size: 9))
             
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 10, weight: .medium))
                 .tracking(0.5)
                 .foregroundStyle(theme.textMuted)
             
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 4)
     }
 }
 

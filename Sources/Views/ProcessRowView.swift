@@ -18,54 +18,55 @@ struct ProcessRowView: View {
     @State private var showCopied = false
     
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            StatusDot(isRunning: true)
-            
-            VStack(alignment: .leading, spacing: 3) {
-                // Title row
-                HStack(spacing: 8) {
-                    Text(process.displayName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                        .lineLimit(1)
-                    
-                    PortLabel(port: process.port)
-                    
-                    if isPinned {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(theme.accentPin)
-                    }
-                    
-                    if isWatched {
-                        WatchedBadge()
-                    }
-                }
+        HStack(spacing: 8) {
+            // Status dot + watched indicator
+            ZStack {
+                StatusDot(isRunning: true)
                 
-                // Meta row
-                HStack(spacing: 8) {
-                    if let dir = process.workingDirectory {
-                        PathLabel(path: dir)
-                    }
-                    
-                    if let branch = process.gitBranch {
-                        GitBranchLabel(branch: branch)
-                    }
+                if isWatched {
+                    Circle()
+                        .fill(theme.accentSecondary)
+                        .frame(width: 4, height: 4)
+                        .offset(x: 5, y: -3)
                 }
+            }
+            .frame(width: 12)
+            
+            // Name / Path (expands on hover)
+            Text(isHovering ? expandedName : process.displayName)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .animation(.easeInOut(duration: 0.15), value: isHovering)
+            
+            // Git branch (always visible if present)
+            if let branch = process.gitBranch {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: 9))
+                    Text(branch)
+                        .lineLimit(1)
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(theme.accentPrimary)
             }
             
             Spacer()
             
+            // Right side: port OR actions
             if isHovering {
                 actionButtons
+            } else {
+                PortLabel(port: process.port)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 6)
                 .fill(isHovering ? theme.surfaceHover : Color.clear)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 6)
         )
         .contentShape(Rectangle())
         .onHover { hovering in
@@ -75,24 +76,23 @@ struct ProcessRowView: View {
         }
     }
     
+    private var expandedName: String {
+        guard let dir = process.workingDirectory else { return process.displayName }
+        return abbreviatePath(dir)
+    }
+    
     private var actionButtons: some View {
         HStack(spacing: 2) {
-            // Open in browser
-            EmojiActionButton(emoji: "🌐", action: onOpen)
+            CompactActionButton(icon: "globe", action: onOpen)
             
-            // Copy URL
-            Button(action: {
+            CompactActionButton(
+                icon: showCopied ? "checkmark" : "doc.on.doc",
+                tint: showCopied ? theme.statusRunning : nil
+            ) {
                 onCopyURL()
                 showCopiedFeedback()
-            }) {
-                Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
-                    .font(.system(size: 11))
-                    .frame(width: 26, height: 26)
-                    .foregroundStyle(showCopied ? theme.statusRunning : theme.textSecondary)
             }
-            .buttonStyle(.plain)
             
-            // More actions menu
             Menu {
                 Button(action: onOpenFolder) {
                     Label("Open in Finder", systemImage: "folder")
@@ -123,9 +123,9 @@ struct ProcessRowView: View {
                     Label("Kill Process", systemImage: "xmark.circle")
                 }
             } label: {
-                Text("⋯")
-                    .font(.system(size: 14, weight: .bold))
-                    .frame(width: 26, height: 26)
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
             .menuStyle(.borderlessButton)
@@ -140,9 +140,190 @@ struct ProcessRowView: View {
             showCopied = false
         }
     }
+    
+    private func abbreviatePath(_ path: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        if path.hasPrefix(home) {
+            return "~" + path.dropFirst(home.count)
+        }
+        return path
+    }
 }
 
-// MARK: - Legacy Action Button Style (for compatibility)
+// MARK: - Compact Action Button
+
+struct CompactActionButton: View {
+    let icon: String
+    var tint: Color? = nil
+    let action: () -> Void
+    
+    @Environment(\.theme) var theme
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .frame(width: 22, height: 22)
+                .foregroundStyle(tint ?? (isHovering ? theme.textPrimary : theme.textSecondary))
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isHovering ? Color.white.opacity(0.1) : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+}
+
+// MARK: - Pinned Project Row (Compact)
+
+struct PinnedProjectRowCompactView: View {
+    let project: PinnedProject
+    @ObservedObject var processManager: ProcessManager
+    @Environment(\.theme) var theme
+    @State private var isHovering = false
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // Status dot + watched indicator
+            ZStack {
+                StatusDot(isRunning: project.isRunning)
+                
+                if project.isWatched {
+                    Circle()
+                        .fill(theme.accentSecondary)
+                        .frame(width: 4, height: 4)
+                        .offset(x: 5, y: -3)
+                }
+            }
+            .frame(width: 12)
+            
+            // Name / Path
+            Text(isHovering ? abbreviatePath(project.path) : project.displayName)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(project.isRunning ? theme.textPrimary : theme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .animation(.easeInOut(duration: 0.15), value: isHovering)
+            
+            // Git branch (if running)
+            if let branch = project.runningProcess?.gitBranch {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: 9))
+                    Text(branch)
+                        .lineLimit(1)
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(theme.accentPrimary)
+            }
+            
+            Spacer()
+            
+            // Right side: port/status OR actions
+            if isHovering {
+                actionButtons
+            } else if let process = project.runningProcess {
+                PortLabel(port: process.port)
+            } else {
+                Text("—")
+                    .font(.system(size: 11))
+                    .foregroundStyle(theme.textMuted)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHovering ? theme.surfaceHover : Color.clear)
+                .padding(.horizontal, 6)
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovering = hovering
+            }
+        }
+    }
+    
+    private var actionButtons: some View {
+        HStack(spacing: 2) {
+            if let process = project.runningProcess {
+                CompactActionButton(icon: "globe") {
+                    processManager.openInBrowser(process)
+                }
+                
+                CompactActionButton(icon: "doc.on.doc") {
+                    processManager.copyURL(process)
+                }
+            } else {
+                CompactActionButton(icon: "folder") {
+                    processManager.openInFinder(path: project.path)
+                }
+            }
+            
+            Menu {
+                if let process = project.runningProcess {
+                    Button(action: { processManager.copyURL(process) }) {
+                        Label("Copy URL", systemImage: "doc.on.doc")
+                    }
+                    Divider()
+                }
+                
+                Button(action: { processManager.openInFinder(path: project.path) }) {
+                    Label("Open in Finder", systemImage: "folder")
+                }
+                Button(action: { processManager.openInTerminal(path: project.path) }) {
+                    Label("Open in Terminal", systemImage: "terminal")
+                }
+                Button(action: { processManager.openInVSCode(path: project.path) }) {
+                    Label("Open in VS Code", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+                
+                Divider()
+                
+                Button(action: { processManager.toggleWatch(path: project.path) }) {
+                    Label(
+                        project.isWatched ? "Stop Watching" : "Watch for Crashes",
+                        systemImage: project.isWatched ? "bell.slash" : "bell"
+                    )
+                }
+                
+                Button(action: { processManager.togglePin(path: project.path) }) {
+                    Label("Unpin", systemImage: "pin.slash")
+                }
+                
+                if let process = project.runningProcess {
+                    Divider()
+                    Button(role: .destructive, action: { processManager.kill(process) }) {
+                        Label("Kill Process", systemImage: "xmark.circle")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.plain)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+        }
+    }
+    
+    private func abbreviatePath(_ path: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        if path.hasPrefix(home) {
+            return "~" + path.dropFirst(home.count)
+        }
+        return path
+    }
+}
+
+// MARK: - Legacy support
 
 struct ActionButtonStyle: ButtonStyle {
     @Environment(\.theme) var theme

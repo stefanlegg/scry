@@ -95,7 +95,7 @@ struct MenuBarView: View {
     // MARK: - Pinned Section
     
     private var pinnedSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 2) {
             SectionHeader(
                 icon: "📌",
                 title: "Pinned",
@@ -103,19 +103,19 @@ struct MenuBarView: View {
             )
             
             ForEach(processManager.pinnedProjects) { project in
-                PinnedProjectRowView(
+                PinnedProjectRowCompactView(
                     project: project,
                     processManager: processManager
                 )
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
     
     // MARK: - Running Section
     
     private var runningSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 2) {
             if !processManager.pinnedProjects.isEmpty {
                 SectionHeader(
                     icon: "⚡",
@@ -140,7 +140,7 @@ struct MenuBarView: View {
                 )
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
     
     // MARK: - Empty State
@@ -178,128 +178,6 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-    }
-}
-
-// MARK: - Pinned Project Row
-
-struct PinnedProjectRowView: View {
-    let project: PinnedProject
-    @ObservedObject var processManager: ProcessManager
-    @Environment(\.theme) var theme
-    @State private var isHovering = false
-    
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            StatusDot(isRunning: project.isRunning)
-            
-            VStack(alignment: .leading, spacing: 3) {
-                // Title row
-                HStack(spacing: 8) {
-                    Text(project.displayName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(theme.textPrimary)
-                    
-                    if let process = project.runningProcess {
-                        PortLabel(port: process.port)
-                    } else {
-                        Text("not running")
-                            .font(.system(size: 11))
-                            .foregroundStyle(theme.textMuted)
-                            .italic()
-                    }
-                    
-                    if project.isWatched {
-                        WatchedBadge()
-                    }
-                }
-                
-                // Meta row
-                HStack(spacing: 8) {
-                    PathLabel(path: project.path)
-                    
-                    if let branch = project.runningProcess?.gitBranch {
-                        GitBranchLabel(branch: branch)
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            if isHovering {
-                rowActions
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isHovering ? theme.surfaceHover : Color.clear)
-                .padding(.horizontal, 8)
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovering = hovering
-            }
-        }
-    }
-    
-    private var rowActions: some View {
-        HStack(spacing: 2) {
-            if let process = project.runningProcess {
-                EmojiActionButton(emoji: "🌐") {
-                    processManager.openInBrowser(process)
-                }
-            }
-            
-            Menu {
-                if let process = project.runningProcess {
-                    Button(action: { processManager.copyURL(process) }) {
-                        Label("Copy URL", systemImage: "doc.on.doc")
-                    }
-                    Divider()
-                }
-                
-                Button(action: { processManager.openInFinder(path: project.path) }) {
-                    Label("Open in Finder", systemImage: "folder")
-                }
-                Button(action: { processManager.openInTerminal(path: project.path) }) {
-                    Label("Open in Terminal", systemImage: "terminal")
-                }
-                Button(action: { processManager.openInVSCode(path: project.path) }) {
-                    Label("Open in VS Code", systemImage: "chevron.left.forwardslash.chevron.right")
-                }
-                
-                Divider()
-                
-                Button(action: { processManager.toggleWatch(path: project.path) }) {
-                    Label(
-                        project.isWatched ? "Stop Watching" : "Watch for Crashes",
-                        systemImage: project.isWatched ? "bell.slash" : "bell"
-                    )
-                }
-                
-                Button(action: { processManager.togglePin(path: project.path) }) {
-                    Label("Unpin", systemImage: "pin.slash")
-                }
-                
-                if let process = project.runningProcess {
-                    Divider()
-                    Button(role: .destructive, action: { processManager.kill(process) }) {
-                        Label("Kill Process", systemImage: "xmark.circle")
-                    }
-                }
-            } label: {
-                Text("⋯")
-                    .font(.system(size: 14, weight: .bold))
-                    .frame(width: 26, height: 26)
-            }
-            .buttonStyle(.plain)
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-        }
     }
 }
 
