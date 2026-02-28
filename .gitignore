@@ -1,7 +1,24 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift / Xcode
 /.build
 /Packages
 xcuserdata/
 DerivedData/
-.swiftpm/
+.swiftpm/xcode/
 *.xcodeproj
+*.xcworkspace
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+
+# App bundle (build output)
+*.app
+
+# Dependencies
+Package.resolved
