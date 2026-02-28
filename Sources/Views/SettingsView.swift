@@ -168,7 +168,7 @@ struct SettingsView: View {
             
             // Footer
             HStack {
-                Text("Scry v1.0")
+                Text("Scry v0.1.0")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 Spacer()
