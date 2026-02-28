@@ -17,29 +17,8 @@ A lightweight macOS menu bar app that shows your running dev servers at a glance
 - 💻 **Open anywhere** — Finder, Terminal, or VS Code
 - ☠️ **Quick kill** — Stop processes without hunting for terminals
 - 🔄 **Auto-refresh** — Configurable polling (5s-60s, default 15s)
-- 🏷️ **Monorepo-aware** — Shows "heyblathers/web" not just "web"
+- 🏷️ **Monorepo-aware** — Shows "acme-store/web" not just "web"
 - ⚙️ **Configurable filters** — Exclude ports/processes from detection
-
-## Screenshots
-
-```
-┌─────────────────────────────────────────────────────┐
-│  🔮 Scry                    ⌥⇧S         ⟳         │
-├─────────────────────────────────────────────────────┤
-│  📌 Pinned                                          │
-│  ● heyblathers              :3000        🌐  ⋯     │
-│    ~/Code/heyblathers  ·  🌿 main                  │
-│                                                     │
-│  ○ scry                    not running              │
-│    ~/Code/scry                                      │
-├─────────────────────────────────────────────────────┤
-│  ⚡ Running                                         │
-│  ● clawdbot-gateway         :8080        🌐  ⋯     │
-│    ~/Code/clawdbot  ·  🌿 feat/import              │
-├─────────────────────────────────────────────────────┤
-│  Updated 5s ago                              Quit   │
-└─────────────────────────────────────────────────────┘
-```
 
 ## Requirements
 
