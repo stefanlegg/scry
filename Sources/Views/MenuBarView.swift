@@ -3,7 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var processManager: ProcessManager
     @Environment(\.theme) var theme
-    @State private var showingSettings = false
+    @Environment(\.openWindow) var openWindow
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -84,7 +84,7 @@ struct MenuBarView: View {
                 }
                 
                 ScryActionButton(icon: "gearshape") {
-                    showingSettings = true
+                    openWindow(id: "settings")
                 }
             }
         }
