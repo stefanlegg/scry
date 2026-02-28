@@ -11,8 +11,24 @@ on:
         required: false
 
 jobs:
+  test:
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      
+      - name: Run Tests
+        run: swift test --parallel
+
   build:
     runs-on: macos-14
+    needs: test  # Only build if tests pass
     
     steps:
       - name: Checkout
