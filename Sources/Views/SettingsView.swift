@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var settings = SettingsStore.shared
-    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         VStack(spacing: 0) {
@@ -11,7 +10,9 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.headline)
                 Spacer()
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    SettingsWindowController.shared.hideSettings()
+                }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
                         .foregroundStyle(.secondary)
@@ -84,7 +85,7 @@ struct SettingsView: View {
                     .foregroundStyle(.tertiary)
                 Spacer()
                 Button("Done") {
-                    dismiss()
+                    SettingsWindowController.shared.hideSettings()
                 }
                 .keyboardShortcut(.defaultAction)
             }

@@ -18,13 +18,6 @@ struct ScryApp: App {
             Image(systemName: "eye.circle.fill")
         }
         .menuBarExtraStyle(.window)
-        
-        Window("Scry Settings", id: "settings") {
-            SettingsView()
-        }
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentSize)
-        .defaultPosition(.center)
     }
     
     init() {
