@@ -16,11 +16,26 @@ class SettingsStore: ObservableObject {
         static let showGitBranch = "showGitBranch"
         static let portRangeMin = "portRangeMin"
         static let portRangeMax = "portRangeMax"
+        static let refreshInterval = "refreshInterval"
+        static let excludedPorts = "excludedPorts"
         static let notificationsEnabled = "notificationsEnabled"
         static let themeName = "themeName"
         static let hotkeyCode = "hotkeyCode"
         static let hotkeyModifiers = "hotkeyModifiers"
     }
+    
+    // MARK: - Defaults
+    
+    /// Default ports to exclude (known system/app ports)
+    static let defaultExcludedPorts: [ExcludedPort] = [
+        ExcludedPort(port: 3283, label: "Apple Remote Desktop"),
+        ExcludedPort(port: 5000, label: "AirPlay Receiver"),
+        ExcludedPort(port: 5353, label: "mDNS / Bonjour"),
+        ExcludedPort(port: 6463, label: "Discord RPC"),
+        ExcludedPort(port: 7000, label: "AirPlay"),
+        ExcludedPort(port: 7265, label: "Raycast"),
+        ExcludedPort(port: 7768, label: "Spotify"),
+    ]
     
     // MARK: - General
     
@@ -57,6 +72,25 @@ class SettingsStore: ObservableObject {
         didSet {
             defaults.set(portRangeMax, forKey: Keys.portRangeMax)
         }
+    }
+    
+    @Published var refreshInterval: Int {
+        didSet {
+            defaults.set(refreshInterval, forKey: Keys.refreshInterval)
+        }
+    }
+    
+    @Published var excludedPorts: [ExcludedPort] {
+        didSet {
+            // Store as array of dictionaries
+            let encoded = excludedPorts.map { ["port": $0.port, "label": $0.label] }
+            defaults.set(encoded, forKey: Keys.excludedPorts)
+        }
+    }
+    
+    /// Convenience: just the port numbers for filtering
+    var excludedPortNumbers: Set<Int> {
+        Set(excludedPorts.map { $0.port })
     }
     
     // MARK: - Notifications
@@ -99,6 +133,17 @@ class SettingsStore: ObservableObject {
         self.showGitBranch = defaults.object(forKey: Keys.showGitBranch) as? Bool ?? true
         self.portRangeMin = defaults.object(forKey: Keys.portRangeMin) as? Int ?? 3000
         self.portRangeMax = defaults.object(forKey: Keys.portRangeMax) as? Int ?? 9999
+        self.refreshInterval = defaults.object(forKey: Keys.refreshInterval) as? Int ?? 15
+        
+        if let savedPorts = defaults.array(forKey: Keys.excludedPorts) as? [[String: Any]] {
+            self.excludedPorts = savedPorts.compactMap { dict in
+                guard let port = dict["port"] as? Int,
+                      let label = dict["label"] as? String else { return nil }
+                return ExcludedPort(port: port, label: label)
+            }
+        } else {
+            self.excludedPorts = SettingsStore.defaultExcludedPorts
+        }
         self.notificationsEnabled = defaults.object(forKey: Keys.notificationsEnabled) as? Bool ?? true
         self.themeName = defaults.string(forKey: Keys.themeName) ?? "default"
         
@@ -143,5 +188,17 @@ enum ShowStoppedMode: String, CaseIterable {
         case .pinnedOnly: return "Pinned only"
         case .all: return "All recently seen"
         }
+    }
+}
+
+// MARK: - Excluded Port
+
+struct ExcludedPort: Identifiable, Equatable {
+    let id = UUID()
+    var port: Int
+    var label: String
+    
+    static func == (lhs: ExcludedPort, rhs: ExcludedPort) -> Bool {
+        lhs.port == rhs.port
     }
 }

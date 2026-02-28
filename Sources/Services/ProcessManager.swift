@@ -13,9 +13,7 @@ class ProcessManager: ObservableObject {
     private let crashNotifier = CrashNotifier()
     private let pinnedStore = PinnedProjectsStore.shared
     private var refreshTask: Task<Void, Never>?
-    
-    /// Refresh interval in seconds
-    private let refreshInterval: TimeInterval = 5
+    private let settings = SettingsStore.shared
     
     init() {
         startAutoRefresh()
@@ -67,7 +65,7 @@ class ProcessManager: ObservableObject {
         refreshTask = Task {
             while !Task.isCancelled {
                 await refresh()
-                try? await Task.sleep(for: .seconds(refreshInterval))
+                try? await Task.sleep(for: .seconds(settings.refreshInterval))
             }
         }
     }

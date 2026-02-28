@@ -54,15 +54,21 @@ struct ProcessRowView: View {
             
             Spacer()
             
-            // Right side: port OR actions
-            if isHovering {
+            // Right side: port OR actions (fixed width to prevent layout shift)
+            ZStack {
+                // Always reserve space for actions
                 actionButtons
-            } else {
+                    .opacity(isHovering ? 1 : 0)
+                
+                // Port label fades out on hover
                 PortLabel(port: process.port)
+                    .opacity(isHovering ? 0 : 1)
             }
+            .frame(minWidth: 70, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+        .frame(minHeight: 28)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovering ? theme.surfaceHover : Color.clear)
@@ -223,19 +229,29 @@ struct PinnedProjectRowCompactView: View {
             
             Spacer()
             
-            // Right side: port/status OR actions
-            if isHovering {
+            // Right side: port/status OR actions (fixed width to prevent layout shift)
+            ZStack {
+                // Always reserve space for actions
                 actionButtons
-            } else if let process = project.runningProcess {
-                PortLabel(port: process.port)
-            } else {
-                Text("—")
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.textMuted)
+                    .opacity(isHovering ? 1 : 0)
+                
+                // Port/status label fades out on hover
+                Group {
+                    if let process = project.runningProcess {
+                        PortLabel(port: process.port)
+                    } else {
+                        Text("—")
+                            .font(.system(size: 11))
+                            .foregroundStyle(theme.textMuted)
+                    }
+                }
+                .opacity(isHovering ? 0 : 1)
             }
+            .frame(minWidth: 70, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+        .frame(minHeight: 28)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovering ? theme.surfaceHover : Color.clear)

@@ -9,6 +9,18 @@ actor ProcessScanner {
     /// Additional ports commonly used for dev
     private let additionalDevPorts: Set<Int> = [80, 443, 8080, 8443]
     
+    /// Gets excluded ports from settings
+    private var excludedPorts: Set<Int> {
+        SettingsStore.shared.excludedPortNumbers
+    }
+    
+    /// Known non-dev processes to exclude (system services, desktop apps)
+    private let excludedProcesses: Set<String> = [
+        "Spotify", "Discord", "Raycast", "ControlCe", "ARDAgent",
+        "rapportd", "Google", "Slack", "Figma", "Notion", "Obsidian",
+        "1Password", "Dropbox", "zoom.us", "Microsoft", "Code\\x20H"
+    ]
+    
     /// Scans for running dev processes
     func scan() async -> [DevProcess] {
         // Get all listening TCP processes
@@ -45,8 +57,15 @@ actor ProcessScanner {
             let portString = nameField[nameField.index(after: colonIndex)...]
             guard let port = Int(portString) else { continue }
             
-            // Filter to dev-ish ports
-            if devPortRange.contains(port) || additionalDevPorts.contains(port) {
+            // Filter to dev-ish ports, excluding known system ports
+            let inDevRange = devPortRange.contains(port) || additionalDevPorts.contains(port)
+            let isExcludedPort = excludedPorts.contains(port)
+            
+            if inDevRange && !isExcludedPort {
+                // Skip known non-dev processes
+                let isExcluded = excludedProcesses.contains { command.contains($0) }
+                guard !isExcluded else { continue }
+                
                 // Only track if it's a dev-ish process or on a dev port
                 if DevProcessType.isDevProcess(command) || devPortRange.contains(port) {
                     processes[pid] = (command, port, nil)
@@ -59,6 +78,13 @@ actor ProcessScanner {
         
         for (pid, info) in processes {
             let workingDir = getWorkingDirectory(for: pid)
+            
+            // Skip processes with root "/" as working directory (system services)
+            // unless they're known dev process types
+            if workingDir == "/" && !DevProcessType.isDevProcess(info.name) {
+                continue
+            }
+            
             let gitBranch: String? = if let dir = workingDir {
                 getGitBranch(for: dir)
             } else {

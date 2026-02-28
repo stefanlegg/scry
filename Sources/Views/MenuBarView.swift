@@ -73,15 +73,18 @@ struct MenuBarView: View {
             Spacer()
             
             HStack(spacing: 4) {
-                if processManager.isScanning {
+                // Refresh button / spinner (ZStack prevents layout shift)
+                ZStack {
                     ProgressView()
                         .scaleEffect(0.5)
-                        .frame(width: 28, height: 28)
-                } else {
+                        .opacity(processManager.isScanning ? 1 : 0)
+                    
                     ScryActionButton(icon: "arrow.clockwise") {
                         Task { await processManager.refresh() }
                     }
+                    .opacity(processManager.isScanning ? 0 : 1)
                 }
+                .frame(width: 28, height: 28)
                 
                 ScryActionButton(icon: "gearshape") {
                     SettingsWindowController.shared.showSettings()
