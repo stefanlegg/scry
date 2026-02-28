@@ -129,7 +129,20 @@ class SettingsStore: ObservableObject {
     
     private init() {
         // Load saved values or use defaults
-        self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
+        // For launch at login, sync with actual SMAppService state
+        let savedLaunchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
+        let actualStatus = SMAppService.mainApp.status
+        
+        // If there's a mismatch, trust the actual system state
+        if actualStatus == .enabled && !savedLaunchAtLogin {
+            self.launchAtLogin = true
+            defaults.set(true, forKey: Keys.launchAtLogin)
+        } else if actualStatus == .notRegistered && savedLaunchAtLogin {
+            self.launchAtLogin = false
+            defaults.set(false, forKey: Keys.launchAtLogin)
+        } else {
+            self.launchAtLogin = savedLaunchAtLogin
+        }
         self.showGitBranch = defaults.object(forKey: Keys.showGitBranch) as? Bool ?? true
         self.portRangeMin = defaults.object(forKey: Keys.portRangeMin) as? Int ?? 3000
         self.portRangeMax = defaults.object(forKey: Keys.portRangeMax) as? Int ?? 9999
