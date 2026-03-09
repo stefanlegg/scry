@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import ServiceManagement
-import Carbon
 
 /// Persistence for app settings
 class SettingsStore: ObservableObject {
@@ -20,8 +19,6 @@ class SettingsStore: ObservableObject {
         static let excludedPorts = "excludedPorts"
         static let notificationsEnabled = "notificationsEnabled"
         static let themeName = "themeName"
-        static let hotkeyCode = "hotkeyCode"
-        static let hotkeyModifiers = "hotkeyModifiers"
         static let showRestartOption = "showRestartOption"
         static let restartMode = "restartMode"
     }
@@ -111,22 +108,6 @@ class SettingsStore: ObservableObject {
         }
     }
     
-    // MARK: - Hotkey
-    
-    @Published var hotkeyCode: UInt32 {
-        didSet {
-            defaults.set(hotkeyCode, forKey: Keys.hotkeyCode)
-            HotkeyManager.shared.updateHotkey(keyCode: hotkeyCode, modifiers: hotkeyModifiers)
-        }
-    }
-    
-    @Published var hotkeyModifiers: UInt32 {
-        didSet {
-            defaults.set(hotkeyModifiers, forKey: Keys.hotkeyModifiers)
-            HotkeyManager.shared.updateHotkey(keyCode: hotkeyCode, modifiers: hotkeyModifiers)
-        }
-    }
-    
     // MARK: - Restart
     
     @Published var showRestartOption: Bool {
@@ -175,12 +156,7 @@ class SettingsStore: ObservableObject {
         }
         self.notificationsEnabled = defaults.object(forKey: Keys.notificationsEnabled) as? Bool ?? true
         self.themeName = defaults.string(forKey: Keys.themeName) ?? "default"
-        
-        // Hotkey defaults: ⌥⇧S (Option + Shift + S)
-        // keyCode 0x01 = S, optionKey | shiftKey for modifiers
-        self.hotkeyCode = defaults.object(forKey: Keys.hotkeyCode) as? UInt32 ?? 0x01
-        self.hotkeyModifiers = defaults.object(forKey: Keys.hotkeyModifiers) as? UInt32 ?? UInt32(optionKey | shiftKey)
-        
+
         if let modeString = defaults.string(forKey: Keys.showStoppedApps),
            let mode = ShowStoppedMode(rawValue: modeString) {
             self.showStoppedApps = mode

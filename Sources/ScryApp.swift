@@ -20,27 +20,6 @@ struct ScryApp: App {
         .menuBarExtraStyle(.window)
     }
     
-    init() {
-        // Register global hotkey on launch
-        setupHotkey()
-    }
-    
-    private func setupHotkey() {
-        HotkeyManager.shared.onHotkeyPressed = {
-            // Toggle menu visibility
-            DispatchQueue.main.async {
-                // Find the status bar window and simulate a click
-                for window in NSApp.windows {
-                    if window.className.contains("NSStatusBarWindow"),
-                       let button = window.contentView?.subviews.first as? NSButton {
-                        button.performClick(button)
-                        break
-                    }
-                }
-            }
-        }
-        HotkeyManager.shared.register()
-    }
 }
 
 // MARK: - App Delegate
@@ -52,10 +31,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
             print("Running in dev mode - notifications disabled")
             return
         }
-        
+
         // Set up notification delegate
         UNUserNotificationCenter.current().delegate = self
-        
+
         // Request notification permission
         Task {
             try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])

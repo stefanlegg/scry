@@ -30,15 +30,6 @@ struct SettingsView: View {
                 // General
                 Section("General") {
                     Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                    
-                    HStack {
-                        Text("Hotkey")
-                        Spacer()
-                        HotkeyRecorderView(
-                            keyCode: $settings.hotkeyCode,
-                            modifiers: $settings.hotkeyModifiers
-                        )
-                    }
                 }
                 
                 // Display
@@ -168,7 +159,7 @@ struct SettingsView: View {
             
             // Footer
             HStack {
-                Text("Scry v0.1.0")
+                Text("Scry v0.1.1")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 Spacer()
