@@ -4,8 +4,6 @@ A dev server detective for macOS — menu bar app, CLI, and MCP server.
 
 Scry finds running dev servers on your machine and surfaces them through three interfaces: a menu bar app for humans, a CLI for scripts and agents, and an MCP server for AI coding tools.
 
-**Etymology:** From Magic: The Gathering's *scry* mechanic — look at the top of your library and see what's coming.
-
 ## Install
 
 ```bash
