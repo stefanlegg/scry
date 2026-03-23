@@ -1,0 +1,68 @@
+name: Update Homebrew Cask
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-cask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release info
+        id: release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Updating cask to version $VERSION"
+
+      - name: Download release asset and get SHA256
+        id: sha
+        run: |
+          curl -sL "https://github.com/stefanlegg/scry/releases/download/${{ github.ref_name }}/Scry-macOS.zip" -o Scry-macOS.zip
+          SHA256=$(shasum -a 256 Scry-macOS.zip | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "SHA256: $SHA256"
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: stefanlegg/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update cask formula
+        run: |
+          cd homebrew-tap
+          cat > Casks/scry.rb << 'EOF'
+          cask "scry" do
+            version "${{ steps.release.outputs.version }}"
+            sha256 "${{ steps.sha.outputs.sha256 }}"
+
+            url "https://github.com/stefanlegg/scry/releases/download/v#{version}/Scry-macOS.zip"
+            name "Scry"
+            desc "Dev server detective — menu bar app, CLI, and MCP server"
+            homepage "https://github.com/stefanlegg/scry"
+
+            depends_on macos: ">= :ventura"
+
+            app "Scry.app"
+
+            # Symlink CLI tools so they're available in PATH
+            binary "#{appdir}/Scry.app/Contents/MacOS/scry"
+            binary "#{appdir}/Scry.app/Contents/MacOS/scry-mcp"
+
+            zap trash: [
+              "~/Library/Preferences/com.stefanlegg.Scry.plist",
+              "~/Library/Application Support/Scry",
+            ]
+          end
+          EOF
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/scry.rb
+          git commit -m "Update scry to ${{ steps.release.outputs.version }}"
+          git push

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Scry
+@testable import ScryKit
 
 final class DevProcessTests: XCTestCase {
     

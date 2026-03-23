@@ -1,4 +1,5 @@
 import Foundation
+import ScryKit
 
 /// Stores pinned projects and their order
 class PinnedProjectsStore: ObservableObject {

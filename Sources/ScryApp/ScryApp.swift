@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import ScryKit
 
 @main
 struct ScryApp: App {

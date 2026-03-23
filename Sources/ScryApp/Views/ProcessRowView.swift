@@ -1,4 +1,5 @@
 import SwiftUI
+import ScryKit
 
 struct ProcessRowView: View {
     let process: DevProcess
@@ -41,7 +42,18 @@ struct ProcessRowView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .animation(.easeInOut(duration: 0.15), value: isHovering)
-            
+
+            // Framework badge
+            if let fw = process.framework {
+                Text(fw.displayName)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(theme.textMuted)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(3)
+            }
+
             // Git branch (always visible if present)
             if let branch = process.gitBranch {
                 HStack(spacing: 3) {
@@ -226,7 +238,18 @@ struct PinnedProjectRowCompactView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .animation(.easeInOut(duration: 0.15), value: isHovering)
-            
+
+            // Framework badge (if running)
+            if let fw = project.runningProcess?.framework {
+                Text(fw.displayName)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(theme.textMuted)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(3)
+            }
+
             // Git branch (if running)
             if let branch = project.runningProcess?.gitBranch {
                 HStack(spacing: 3) {

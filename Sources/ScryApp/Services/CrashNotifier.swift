@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import ScryKit
 
 /// Monitors watched processes and sends notifications when they crash
 actor CrashNotifier {

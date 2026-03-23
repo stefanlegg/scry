@@ -1,81 +1,123 @@
-# Scry 🔮
+# Scry
 
-A lightweight macOS menu bar app that shows your running dev servers at a glance.
+A dev server detective for macOS — menu bar app, CLI, and MCP server.
+
+Scry finds running dev servers on your machine and surfaces them through three interfaces: a menu bar app for humans, a CLI for scripts and agents, and an MCP server for AI coding tools.
 
 **Etymology:** From Magic: The Gathering's *scry* mechanic — look at the top of your library and see what's coming.
 
-## Features
-
-- 🟢 **Live status** — See all running dev processes (node, bun, deno, python, ruby, go, etc.)
-- 📁 **Project context** — Shows the git repo folder for each process
-- 🌿 **Branch awareness** — Displays current git branch
-- ⌨️ **Global hotkey** — Press `⌥⇧S` to toggle the menu from anywhere
-- 📌 **Pin favorites** — Keep important projects at the top, reorderable
-- 🔔 **Crash notifications** — Get notified when watched servers stop
-- 🌐 **One-click open** — Launch in browser instantly
-- 📋 **Copy URL** — Clipboard the localhost URL
-- 💻 **Open anywhere** — Finder, Terminal, or VS Code
-- ☠️ **Quick kill** — Stop processes without hunting for terminals
-- 🔄 **Auto-refresh** — Configurable polling (5s-60s, default 15s)
-- 🏷️ **Monorepo-aware** — Shows "acme-store/web" not just "web"
-- ⚙️ **Configurable filters** — Exclude ports/processes from detection
-
-## Requirements
-
-- macOS 13.0+ (Ventura or later)
-- Xcode 15+ or Swift 5.9+
-
-## Building
-
-### With Swift Package Manager
+## Install
 
 ```bash
-cd ~/Code/scry
-swift build -c release
-
-# Binary at .build/release/Scry
+brew install --cask stefanlegg/tap/scry
 ```
 
-### Create App Bundle
+This installs the menu bar app, `scry` CLI, and `scry-mcp` server.
+
+## Menu Bar App
+
+- Live status for all running dev processes (node, bun, deno, python, ruby, go, etc.)
+- Framework detection (Next.js, Vite, Astro, Flask, Django, Rails, and 30+ more)
+- Git branch and monorepo-aware labeling ("acme-store/web" not just "web")
+- Pin favorites, crash notifications, one-click open/kill/restart
+- Configurable refresh interval and port filters
+
+## CLI
 
 ```bash
-./scripts/build.sh
-open .build/Scry.app
+# Human-readable table
+scry ls
 
-# Install to Applications
-cp -r .build/Scry.app /Applications/
+# Structured JSON (grouped by git root)
+scry ls --json
+
+# Filter by port
+scry ls --port 3000
 ```
 
-### Development
+Example output:
 
-```bash
-swift run
+```
+PORT    FRAMEWORK     NAME                      BRANCH            DIRECTORY
+───────────────────────────────────────────────────────────────────────────
+:4321   astro         stefanlegg.com            main              ~/Code/stefanlegg.com
+:3000   next          myapp/web                 feat/dashboard    ~/Code/myapp/apps/web
+:8000   django        backend                   main              ~/Code/backend
 ```
 
-## Raycast Extension
+## MCP Server
 
-Scry also includes a Raycast extension for keyboard-driven workflow:
+The MCP server exposes a `list_dev_servers` tool that returns the same structured JSON as `scry ls --json`. Add to your Claude Code config (`.mcp.json`):
 
-```bash
-cd raycast-extension
-npm install
-npm run dev
+```json
+{
+  "mcpServers": {
+    "scry": {
+      "command": "scry-mcp"
+    }
+  }
+}
 ```
 
-**Commands:**
-- `List Dev Servers` — Full list with all actions
-- `Open Dev Server` — Quick open in browser
-- `Kill Dev Server` — Quick stop a process
+Or for Cursor/other MCP clients, point to the binary path directly.
+
+## Claude Code Skill
+
+Copy `skills/scry.md` to your `.claude/commands/` directory to add a `/scry` command that wraps the CLI.
 
 ## How It Works
 
 Scry detects dev processes by:
-1. Scanning for processes listening on TCP ports (3000-9999 range)
+1. Scanning for processes listening on TCP ports (3000-9999 range) via `lsof`
 2. Identifying dev-related processes (node, bun, deno, python, ruby, cargo, go)
-3. Looking up the working directory for each process via `lsof`
-4. Getting the git repo root via `git rev-parse --show-toplevel` (for monorepo-aware naming)
-5. Getting the current branch via `git rev-parse --abbrev-ref HEAD`
-6. Polling at configurable intervals (default 15 seconds)
+3. Looking up the working directory via `lsof -p`
+4. Getting the git repo root and branch via `git rev-parse`
+5. Pattern-matching the command string to detect the framework
+
+## Local Development
+
+### Requirements
+
+- macOS 13.0+ (Ventura or later)
+- Xcode 15+ or Swift 5.9+
+
+### Build and run
+
+```bash
+# Menu bar app
+swift build --product Scry
+.build/debug/Scry
+
+# CLI
+swift run scry ls
+swift run scry -- ls --json
+
+# Run tests
+swift test
+```
+
+### Test the MCP server
+
+Pipe JSON-RPC messages over stdin:
+
+```bash
+swift build --product scry-mcp
+
+MSG='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}'
+CALL='{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_dev_servers","arguments":{}}}'
+
+{
+  printf "Content-Length: %d\r\n\r\n%s" ${#MSG} "$MSG"
+  printf "Content-Length: %d\r\n\r\n%s" ${#CALL} "$CALL"
+} | .build/debug/scry-mcp
+```
+
+### Create app bundle
+
+```bash
+./scripts/build.sh
+open .build/Scry.app
+```
 
 ## Project Structure
 
@@ -83,36 +125,36 @@ Scry detects dev processes by:
 scry/
 ├── Package.swift
 ├── Sources/
-│   ├── ScryApp.swift                     # Main app entry
-│   ├── Info.plist                        # LSUIElement (no dock)
-│   ├── Models/
-│   │   └── DevProcess.swift              # Process data model
-│   ├── Services/
-│   │   ├── ProcessScanner.swift          # lsof + git detection
-│   │   ├── ProcessManager.swift          # State + actions
-│   │   ├── HotkeyManager.swift           # Global ⌥⇧S hotkey
-│   │   ├── PinnedProjectsStore.swift     # Favorites persistence
-│   │   ├── CrashNotifier.swift           # Crash notifications
-│   │   ├── SettingsStore.swift           # Settings persistence
-│   │   └── SettingsWindowController.swift
-│   ├── Theme/
-│   │   ├── ScryTheme.swift               # Theme protocol + implementations
-│   │   └── Components.swift              # Styled components (StatusDot, etc.)
-│   └── Views/
-│       ├── MenuBarView.swift             # Main menu content
-│       ├── ProcessRowView.swift          # Process + pinned row views
-│       ├── SettingsView.swift            # Settings UI
-│       └── HotkeyRecorderView.swift      # Hotkey capture UI
+│   ├── ScryKit/                          # Shared library (Foundation only)
+│   │   ├── Models/
+│   │   │   ├── DevProcess.swift          # Process data model
+│   │   │   └── FrameworkDetector.swift    # Framework detection
+│   │   └── Services/
+│   │       └── ProcessScanner.swift      # lsof + git detection
+│   ├── ScryApp/                          # Menu bar app
+│   │   ├── ScryApp.swift                 # Main app entry
+│   │   ├── Info.plist                    # LSUIElement (no dock)
+│   │   ├── Services/
+│   │   │   ├── ProcessManager.swift      # State + actions
+│   │   │   ├── PinnedProjectsStore.swift # Favorites persistence
+│   │   │   ├── CrashNotifier.swift       # Crash notifications
+│   │   │   ├── SettingsStore.swift        # Settings persistence
+│   │   │   └── SettingsWindowController.swift
+│   │   ├── Theme/
+│   │   │   ├── ScryTheme.swift           # Theme protocol
+│   │   │   └── Components.swift          # Styled components
+│   │   └── Views/
+│   │       ├── MenuBarView.swift         # Main menu content
+│   │       ├── ProcessRowView.swift      # Process row views
+│   │       └── SettingsView.swift        # Settings UI
+│   ├── ScryCLI/                          # CLI tool
+│   │   └── ScryCLI.swift
+│   └── ScryMCP/                          # MCP server
+│       ├── main.swift
+│       └── ScryMCPServer.swift
+├── skills/
+│   └── scry.md                           # Claude Code skill
 ├── raycast-extension/                    # Raycast integration
-│   ├── src/
-│   │   ├── list-servers.tsx
-│   │   ├── open-server.tsx
-│   │   ├── kill-server.tsx
-│   │   └── scanner.ts
-│   └── package.json
-├── docs/
-│   ├── DESIGN_DIRECTION.md               # Design philosophy
-│   └── SETTINGS_DESIGN.md                # Settings architecture
 └── scripts/
     ├── build.sh
     └── run.sh

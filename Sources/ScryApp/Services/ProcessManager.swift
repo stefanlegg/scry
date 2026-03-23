@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import ScryKit
 
 /// Manages the list of dev processes with auto-refresh
 @MainActor
@@ -27,7 +28,7 @@ class ProcessManager: ObservableObject {
     func refresh() async {
         isScanning = true
         
-        let scannedProcesses = await scanner.scan()
+        let scannedProcesses = await scanner.scan(excludedPorts: settings.excludedPortNumbers)
         processes = scannedProcesses
         
         // Check for crashes on watched processes

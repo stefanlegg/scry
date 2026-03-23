@@ -1,4 +1,5 @@
 import SwiftUI
+import ScryKit
 
 struct MenuBarView: View {
     @ObservedObject var processManager: ProcessManager
