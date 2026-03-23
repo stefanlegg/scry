@@ -1,8 +1,8 @@
 # Scry
 
-A dev server detective for macOS — menu bar app, CLI, and MCP server.
+You have 5 dev servers running across 3 repos and you can't remember which port is which. Scry finds them all and tells you what's running, where, and on what framework — from your menu bar, the terminal, or your AI coding agent.
 
-Scry finds running dev servers on your machine and surfaces them through three interfaces: a menu bar app for humans, a CLI for scripts and agents, and an MCP server for AI coding tools.
+One install, multiple interfaces. Use whichever fits your workflow.
 
 ## Install
 
@@ -10,30 +10,23 @@ Scry finds running dev servers on your machine and surfaces them through three i
 brew install --cask stefanlegg/tap/scry
 ```
 
-This installs the menu bar app, `scry` CLI, and `scry-mcp` server.
+## Use it your way
 
-## Menu Bar App
+### Menu bar app
 
-- Live status for all running dev processes (node, bun, deno, python, ruby, go, etc.)
-- Framework detection (Next.js, Vite, Astro, Flask, Django, Rails, and 30+ more)
-- Git branch and monorepo-aware labeling ("acme-store/web" not just "web")
-- Pin favorites, crash notifications, one-click open/kill/restart
-- Configurable refresh interval and port filters
+Best for: always-on visibility without leaving your current context.
 
-## CLI
+The app lives in your menu bar and shows every running dev server with its port, git branch, framework, and project name. Pin favorites, get crash notifications, open in browser, kill processes — all from the menu.
+
+Launches automatically after install. No configuration needed.
+
+### CLI
+
+Best for: terminal workflows, scripts, automation, and piping into other tools.
 
 ```bash
-# Human-readable table
 scry ls
-
-# Structured JSON (grouped by git root)
-scry ls --json
-
-# Filter by port
-scry ls --port 3000
 ```
-
-Example output:
 
 ```
 PORT    FRAMEWORK     NAME                      BRANCH            DIRECTORY
@@ -43,9 +36,16 @@ PORT    FRAMEWORK     NAME                      BRANCH            DIRECTORY
 :8000   django        backend                   main              ~/Code/backend
 ```
 
-## MCP Server
+```bash
+scry ls --json          # structured JSON, grouped by git root
+scry ls --port 3000     # filter to a specific port
+```
 
-The MCP server exposes a `list_dev_servers` tool that returns the same structured JSON as `scry ls --json`. Add to your Claude Code config (`.mcp.json`):
+### MCP server
+
+Best for: giving AI coding agents (Claude Code, Cursor, Windsurf, etc.) awareness of your running dev servers.
+
+The MCP server exposes a `list_dev_servers` tool that returns the same structured data as `scry ls --json`. Add to `.mcp.json`:
 
 ```json
 {
@@ -57,106 +57,25 @@ The MCP server exposes a `list_dev_servers` tool that returns the same structure
 }
 ```
 
-Or for Cursor/other MCP clients, point to the binary path directly.
+Your agent can now ask "what's running?" and get back ports, frameworks, branches, and working directories in a single tool call.
 
-## Claude Code Skill
+### Claude Code skill
 
-Copy `skills/scry.md` to your `.claude/commands/` directory to add a `/scry` command that wraps the CLI.
+Best for: Claude Code users who want a quick `/scry` command.
 
-## How It Works
+Copy `skills/scry.md` to `.claude/commands/` and you get a `/scry` slash command that wraps the CLI.
 
-Scry detects dev processes by:
-1. Scanning for processes listening on TCP ports (3000-9999 range) via `lsof`
-2. Identifying dev-related processes (node, bun, deno, python, ruby, cargo, go)
-3. Looking up the working directory via `lsof -p`
-4. Getting the git repo root and branch via `git rev-parse`
-5. Pattern-matching the command string to detect the framework
+## What it detects
 
-## Local Development
+**Runtimes:** Node.js, Bun, Deno, Python, Ruby, Go, Rust, Java, PHP
 
-### Requirements
+**Frameworks:** Next.js, Vite, Remix, Nuxt, Astro, SvelteKit, Gatsby, Express, Fastify, Flask, Django, FastAPI, Rails, Laravel, Phoenix, and more
 
-- macOS 13.0+ (Ventura or later)
-- Xcode 15+ or Swift 5.9+
+**Context:** git branch, git root (monorepo-aware naming), working directory, full command
 
-### Build and run
+## Contributing
 
-```bash
-# Menu bar app
-swift build --product Scry
-.build/debug/Scry
-
-# CLI
-swift run scry ls
-swift run scry -- ls --json
-
-# Run tests
-swift test
-```
-
-### Test the MCP server
-
-Pipe JSON-RPC messages over stdin:
-
-```bash
-swift build --product scry-mcp
-
-MSG='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}'
-CALL='{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_dev_servers","arguments":{}}}'
-
-{
-  printf "Content-Length: %d\r\n\r\n%s" ${#MSG} "$MSG"
-  printf "Content-Length: %d\r\n\r\n%s" ${#CALL} "$CALL"
-} | .build/debug/scry-mcp
-```
-
-### Create app bundle
-
-```bash
-./scripts/build.sh
-open .build/Scry.app
-```
-
-## Project Structure
-
-```
-scry/
-├── Package.swift
-├── Sources/
-│   ├── ScryKit/                          # Shared library (Foundation only)
-│   │   ├── Models/
-│   │   │   ├── DevProcess.swift          # Process data model
-│   │   │   └── FrameworkDetector.swift    # Framework detection
-│   │   └── Services/
-│   │       └── ProcessScanner.swift      # lsof + git detection
-│   ├── ScryApp/                          # Menu bar app
-│   │   ├── ScryApp.swift                 # Main app entry
-│   │   ├── Info.plist                    # LSUIElement (no dock)
-│   │   ├── Services/
-│   │   │   ├── ProcessManager.swift      # State + actions
-│   │   │   ├── PinnedProjectsStore.swift # Favorites persistence
-│   │   │   ├── CrashNotifier.swift       # Crash notifications
-│   │   │   ├── SettingsStore.swift        # Settings persistence
-│   │   │   └── SettingsWindowController.swift
-│   │   ├── Theme/
-│   │   │   ├── ScryTheme.swift           # Theme protocol
-│   │   │   └── Components.swift          # Styled components
-│   │   └── Views/
-│   │       ├── MenuBarView.swift         # Main menu content
-│   │       ├── ProcessRowView.swift      # Process row views
-│   │       └── SettingsView.swift        # Settings UI
-│   ├── ScryCLI/                          # CLI tool
-│   │   └── ScryCLI.swift
-│   └── ScryMCP/                          # MCP server
-│       ├── main.swift
-│       └── ScryMCPServer.swift
-├── skills/
-│   └── scry.md                           # Claude Code skill
-├── raycast-extension/                    # Raycast integration
-└── scripts/
-    ├── build.sh
-    └── run.sh
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup, build instructions, and project structure.
 
 ## License
 
